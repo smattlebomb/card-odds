@@ -10,7 +10,9 @@ All the math runs on the device. There's no server, no account, no analytics and
 
 - **Blackjack calculator (done):** pick the dealer's upcard and your cards, optionally enter a Hi-Lo true count, and get the best play (hit / stand / double / split / surrender) with its EV, the EV of every other legal play, and a one-line reason. Table rules are set in Settings.
 - **Hold'em calculator (done):** pick hole cards and an optional board, the number of opponents, pot and bet size. Equity is computed in a Web Worker (exact enumeration when it's cheap, Monte Carlo otherwise). The screen also shows outs, pot odds, a fold/call/raise (or check/bet) suggestion, and a tight 6-max preflop opening chart by position.
-- **Coming later:** blackjack basic-strategy practice and Hi-Lo counting practice; Hold'em call/fold drills; an optional log of hands and practice accuracy, kept in this browser only.
+- **Practice drills:** random blackjack spots graded against basic strategy for your current rules; Hold'em turn spots graded fold/call against equity vs pot odds. A running accuracy score is saved on the device.
+- **Hi-Lo counting practice:** deal through a shoe (speed settings, or tap to deal) and quiz the running count every 8 cards; separate true-count conversion drills (TC = RC ÷ remaining decks, truncated toward zero).
+- **Hands & Stats:** manual hand log (win/loss/push and an amount), practice accuracy by type, and simple daily charts. Everything stays in `localStorage` on this device (`card-odds:stats:v1`).
 
 See `.grokbot/PLAN.md` for the phase plan.
 
@@ -60,6 +62,8 @@ npm run preview   # serve the production build locally
 To try it on a phone on the same Wi-Fi, run `npm run dev -- --host` and open the printed network address.
 
 `npm run icons` regenerates the placeholder icons in `public/`.
+
+If this repo is public on GitHub Pages, that's fine: the app is a trainer and does not collect or require personal data. Settings and the hand log never leave the device.
 
 ### Hosting under a sub-path (GitHub Pages)
 

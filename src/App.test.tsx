@@ -37,7 +37,7 @@ describe('App shell', () => {
     expect(window.location.hash).toBe('#/blackjack/calculator');
     click(button(c, 'Count'));
     expect(current(c)).toBe('Count');
-    expect(c.textContent).toContain('coming in a later phase');
+    expect(c.textContent).toContain('Running count');
     expect(window.location.hash).toBe('#/blackjack/count');
     click(button(c, 'Back'));
     expect(title(c)).toBe('Card Odds');
