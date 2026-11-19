@@ -115,7 +115,7 @@ export function holdemAdvice({ equity, opponents, pot, toCall, outs, vsRanges = 
     return {
       action: 'call',
       required,
-      reason: `Call: you have ${pct(equity)} equity and ${need}, so a call is +EV.`,
+      reason: `Call: you have ${pct(equity)} equity against ${vs} and ${need}, so a call is +EV.`,
       notes,
     };
   }
