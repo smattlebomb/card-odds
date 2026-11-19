@@ -1,0 +1,65 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: system-ui, -apple-system, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+  /* Casino table felt, darkest to lightest. */
+  --color-felt-950: #042a1b;
+  --color-felt-900: #063d27;
+  --color-felt-800: #0b5d3b;
+  --color-felt-700: #10764a;
+  --color-felt-600: #15905a;
+  --color-felt-400: #4fc48a;
+  --color-gold: #f5c542;
+  --color-chalk: #f8f7f0;
+  --color-card-red: #dc2626;
+  --color-card-black: #111827;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+html {
+  /* Large base type: easier to read at arm's length on a phone. */
+  font-size: 18px;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-chalk);
+  background:
+    radial-gradient(ellipse at 50% 0%, var(--color-felt-700) 0%, transparent 70%),
+    var(--color-felt-900);
+  background-attachment: fixed;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  box-sizing: border-box;
+}
+
+button {
+  touch-action: manipulation;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+}
