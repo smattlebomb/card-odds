@@ -9,7 +9,8 @@ All the math runs on the device. There's no server, no account, no analytics and
 ## What's in it
 
 - **Blackjack calculator (done):** pick the dealer's upcard and your cards, optionally enter a Hi-Lo true count, and get the best play (hit / stand / double / split / surrender) with its EV, the EV of every other legal play, and a one-line reason. Table rules are set in Settings.
-- **Coming later:** blackjack basic-strategy practice and Hi-Lo counting practice; Hold'em equity, outs and pot odds plus call/fold practice; an optional log of hands and practice accuracy, kept in this browser only.
+- **Hold'em calculator (done):** pick hole cards and an optional board, the number of opponents, pot and bet size. Equity is computed in a Web Worker (exact enumeration when it's cheap, Monte Carlo otherwise). The screen also shows outs, pot odds, a fold/call/raise (or check/bet) suggestion, and a tight 6-max preflop opening chart by position.
+- **Coming later:** blackjack basic-strategy practice and Hi-Lo counting practice; Hold'em call/fold drills; an optional log of hands and practice accuracy, kept in this browser only.
 
 See `.grokbot/PLAN.md` for the phase plan.
 
@@ -30,6 +31,19 @@ See `.grokbot/PLAN.md` for the phase plan.
 - The indexes are for 6–8 decks; with 1–2 decks they're an approximation.
 - Insurance and even money: take them at TC ≥ +3, never without a count.
 - The EVs shown are for a neutral shoe and don't include the count.
+
+
+## Hold'em: how the numbers work
+
+**Equity** is P(win) plus a fair share of ties, against random remaining cards (you can also fix a known opponent hand in the engine; the calculator itself treats opponents as random). When the number of deals is small enough — typically heads-up on the turn or river — the result is an exact enumeration. Otherwise it runs 200,000 Monte Carlo deals in a Web Worker so the UI stays smooth, and labels the result as an estimate.
+
+**Outs** on the flop or turn are cards that raise the hand's category to at least two pair and clearly ahead of the board (so a flush draw is 9, an open-ended straight draw is 8). Overcards to a mere pair are ignored on purpose; dirty outs that mostly make the board are filtered out.
+
+**Pot odds:** enter the pot *before* the bet you're facing, and the amount to call. A $50 bet into a $100 pot needs 25% equity (50 into 200). Advice is educational and assumes random hands; a real player who bets usually has a stronger range than that, and the screen says so.
+
+**Preflop chart:** a tight-ish 6-max cash opening (RFI) guide for UTG / MP / CO / BTN / SB. It is not a solver and the big blind has no opening range here (it already posted).
+
+The evaluator and known matchups are unit-tested, including AA vs KK heads-up ≈ 82.6% equity, AKs vs AKo, 22 vs AK, wheel straights, and river chops.
 
 ## Run it
 

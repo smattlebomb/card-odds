@@ -1,10 +1,7 @@
-import { useState } from 'react';
-import { CardPicker } from '../components/CardPicker';
 import { Placeholder, Screen } from '../components/Layout';
-import { PlayingCard } from '../components/PlayingCard';
-import { cardId, type Card } from '../lib/cards';
 import type { Rules } from '../lib/blackjack/rules';
 import { BlackjackCalculator } from './BlackjackCalculator';
+import { HoldemCalculator } from './HoldemCalculator';
 import { GAME_TABS, type Game, type GameTab, type Route } from '../lib/route';
 
 const GAME_TITLE: Record<Game, string> = { blackjack: 'Blackjack', holdem: "Hold'em" };
@@ -56,45 +53,14 @@ export function GameScreen({ game, tab, navigate, rules }: Props) {
     <Screen title={GAME_TITLE[game]} onBack={() => navigate({ screen: 'home' })} nav={nav}>
       {game === 'blackjack' && tab === 'calculator' ? (
         <BlackjackCalculator rules={rules} onEditRules={() => navigate({ screen: 'settings' })} />
+      ) : game === 'holdem' && tab === 'calculator' ? (
+        <HoldemCalculator />
       ) : (
         <div className="flex flex-col gap-6">
           <Placeholder text={PLACEHOLDER[game][tab]} />
-          {tab === 'calculator' && <PickerPreview max={7} />}
         </div>
       )}
     </Screen>
   );
 }
 
-/** Lets the card picker be tried on a device before the calculators exist. */
-function PickerPreview({ max }: { max: number }) {
-  const [cards, setCards] = useState<Card[]>([]);
-  const full = cards.length >= max;
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex min-h-24 flex-wrap items-center gap-2">
-        {cards.length === 0 ? (
-          <PlayingCard card={null} />
-        ) : (
-          cards.map((c) => <PlayingCard key={cardId(c)} card={c} />)
-        )}
-        {cards.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setCards([])}
-            className="ml-auto min-h-14 rounded-2xl bg-felt-950/50 px-5 text-lg font-bold active:bg-felt-950"
-          >
-            Clear
-          </button>
-        )}
-      </div>
-      {!full && (
-        <CardPicker
-          label="Card picker preview"
-          used={cards.map(cardId)}
-          onPick={(c) => setCards((prev) => [...prev, c])}
-        />
-      )}
-    </div>
-  );
-}
