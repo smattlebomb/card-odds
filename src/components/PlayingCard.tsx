@@ -1,4 +1,4 @@
-import { cardName, isRed, rankLabel, SUIT_SYMBOL, type Card } from '../lib/cards';
+import { cardName, isRed, RANK_NAME, rankLabel, SUIT_SYMBOL, type Card, type Rank } from '../lib/cards';
 
 const SIZES = {
   sm: 'h-16 w-12 text-xl',
@@ -28,6 +28,19 @@ export function PlayingCard({ card, size = 'md' }: { card: Card | null; size?: k
     >
       <span>{rankLabel(card.rank)}</span>
       <span>{SUIT_SYMBOL[card.suit]}</span>
+    </div>
+  );
+}
+
+/** A card shown by rank only (blackjack: suits don't matter). */
+export function RankCard({ rank, size = 'md' }: { rank: Rank; size?: keyof typeof SIZES }) {
+  return (
+    <div
+      role="img"
+      aria-label={RANK_NAME[rank]}
+      className={`${SIZES[size]} flex items-center justify-center rounded-xl bg-chalk font-extrabold leading-none text-card-black shadow-lg shadow-black/40`}
+    >
+      {rankLabel(rank)}
     </div>
   );
 }

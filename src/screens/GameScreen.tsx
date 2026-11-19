@@ -3,6 +3,8 @@ import { CardPicker } from '../components/CardPicker';
 import { Placeholder, Screen } from '../components/Layout';
 import { PlayingCard } from '../components/PlayingCard';
 import { cardId, type Card } from '../lib/cards';
+import type { Rules } from '../lib/blackjack/rules';
+import { BlackjackCalculator } from './BlackjackCalculator';
 import { GAME_TABS, type Game, type GameTab, type Route } from '../lib/route';
 
 const GAME_TITLE: Record<Game, string> = { blackjack: 'Blackjack', holdem: "Hold'em" };
@@ -10,7 +12,7 @@ const TAB_LABEL: Record<GameTab, string> = { calculator: 'Calculator', practice:
 
 const PLACEHOLDER: Record<Game, Record<GameTab, string>> = {
   blackjack: {
-    calculator: 'Best-play calculator is coming in a later phase.',
+    calculator: '',
     practice: 'Basic-strategy drills are coming in a later phase.',
     count: 'Hi-Lo counting practice is coming in a later phase.',
   },
@@ -25,9 +27,10 @@ interface Props {
   game: Game;
   tab: GameTab;
   navigate: (r: Route) => void;
+  rules: Rules;
 }
 
-export function GameScreen({ game, tab, navigate }: Props) {
+export function GameScreen({ game, tab, navigate, rules }: Props) {
   const tabs = GAME_TABS[game];
   const nav = (
     <nav aria-label={`${GAME_TITLE[game]} sections`} className="px-4 pt-3">
@@ -51,10 +54,14 @@ export function GameScreen({ game, tab, navigate }: Props) {
 
   return (
     <Screen title={GAME_TITLE[game]} onBack={() => navigate({ screen: 'home' })} nav={nav}>
-      <div className="flex flex-col gap-6">
-        <Placeholder text={PLACEHOLDER[game][tab]} />
-        {tab === 'calculator' && <PickerPreview max={game === 'holdem' ? 7 : 6} />}
-      </div>
+      {game === 'blackjack' && tab === 'calculator' ? (
+        <BlackjackCalculator rules={rules} onEditRules={() => navigate({ screen: 'settings' })} />
+      ) : (
+        <div className="flex flex-col gap-6">
+          <Placeholder text={PLACEHOLDER[game][tab]} />
+          {tab === 'calculator' && <PickerPreview max={7} />}
+        </div>
+      )}
     </Screen>
   );
 }

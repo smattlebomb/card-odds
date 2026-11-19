@@ -44,3 +44,23 @@ describe('CardPicker', () => {
     expect(button(c, 'Hearts')!.disabled).toBe(false);
   });
 });
+
+describe('CardPicker rank-only mode (blackjack)', () => {
+  it('one tap picks a rank; no suit buttons', () => {
+    const onPick = vi.fn();
+    view = render(<CardPicker rankOnly onPick={onPick} />);
+    const c = view.container;
+    expect(c.querySelectorAll('button')).toHaveLength(13);
+    expect(button(c, 'Hearts')).toBeUndefined();
+    click(button(c, 'Seven'));
+    expect(onPick).toHaveBeenCalledWith('7');
+    click(button(c, 'King'));
+    expect(onPick).toHaveBeenLastCalledWith('K');
+  });
+
+  it('disables ranks the caller rules out', () => {
+    view = render(<CardPicker rankOnly onPick={() => {}} isRankDisabled={(r) => r === 'A'} />);
+    expect(button(view.container, 'Ace')!.disabled).toBe(true);
+    expect(button(view.container, 'Two')!.disabled).toBe(false);
+  });
+});

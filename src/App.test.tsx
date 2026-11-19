@@ -7,6 +7,7 @@ import { DISCLAIMER } from './components/Disclaimer';
 let view: Rendered | null = null;
 beforeEach(() => {
   window.location.hash = '';
+  localStorage.clear();
 });
 afterEach(() => {
   view?.unmount();
@@ -61,5 +62,29 @@ describe('App shell', () => {
     window.location.hash = '#/holdem/practice';
     view = render(<App />);
     expect(current(view.container)).toBe('Practice');
+  });
+
+  it('rule changes in Settings persist and reach the Blackjack calculator', () => {
+    window.location.hash = '#/settings';
+    view = render(<App />);
+    const c = view.container;
+    const group = (label: string) => c.querySelector(`[role="group"][aria-label="${label}"]`)!;
+    click(button(group('Decks'), '2'));
+    click(button(group('Soft 17'), 'Dealer hits (H17)'));
+    click(button(group('Late surrender'), 'On'));
+    expect(JSON.parse(localStorage.getItem('card-odds:rules:v1')!)).toMatchObject({ decks: 2, hitSoft17: true, surrender: true });
+    view.unmount();
+
+    window.location.hash = '#/blackjack/calculator';
+    view = render(<App />);
+    const v = view.container;
+    expect(v.querySelector('[data-testid="rules-summary"]')!.textContent).toBe('2D · H17 · DAS · late surrender · 3:2');
+    // 11 vs A doubles under H17 (it's a hit in 6D S17).
+    for (const n of ['Ace', 'Six', 'Five']) click(button(v, n));
+    expect(v.querySelector('[data-testid="action"]')!.textContent).toBe('Double');
+    click(v.querySelector('[data-testid="rules-summary"]')!.closest('button'));
+    expect(title(v)).toBe('Settings');
+    click(button(v, 'Reset to defaults'));
+    expect(v.textContent).toContain('6D · S17 · DAS · no surrender · 3:2');
   });
 });

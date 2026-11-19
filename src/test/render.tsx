@@ -65,3 +65,12 @@ export function mapLabels(container: Element): string[] {
     [...t.querySelectorAll('tspan')].map((s) => s.textContent).join(' '),
   );
 }
+
+/** Type into a controlled React input (sets the native value, then fires `input`). */
+export function typeInto(input: HTMLInputElement | null, value: string) {
+  if (!input) throw new Error('typeInto: input not found');
+  act(() => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+}
