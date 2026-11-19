@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CardPicker } from '../components/CardPicker';
 import { PlayingCard } from '../components/PlayingCard';
+import { RangeEditor, type RangeChoice } from '../components/RangeEditor';
 import { Segmented } from '../components/Segmented';
 import { cardId, type Card } from '../lib/cards';
 import {
   computeInWorker,
   countOuts,
   DEFAULT_TRIALS,
+  describeRange,
+  liveCombos,
   GRID_RANKS,
   gridKey,
   handKey,
@@ -90,11 +93,19 @@ export function HoldemCalculator({ compute = computeInWorker }: Props) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [position, setPosition] = useState<Position>('BTN');
+  /** One range per opponent seat; keys null = random hands. */
+  const [ranges, setRanges] = useState<RangeChoice[]>(() =>
+    Array.from({ length: MAX_OPPONENTS }, () => ({ keys: null, name: null })),
+  );
+  const [editing, setEditing] = useState<number | null>(null);
 
   const used = [...hole, ...board].map(cardId);
+  const dead = useMemo(() => [...hole, ...board].map(toInt), [hole, board]);
   const holeFull = hole.length >= 2;
   const boardReady = board.length === 0 || board.length === 3 || board.length === 4 || board.length === 5;
   const canCompute = holeFull && boardReady;
+  const activeRanges = ranges.slice(0, opponents);
+  const vsRanges = activeRanges.some((r) => r.keys);
 
   const input: EquityInput | null = useMemo(() => {
     if (!canCompute) return null;
@@ -102,9 +113,14 @@ export function HoldemCalculator({ compute = computeInWorker }: Props) {
       hole: hole.map(toInt),
       board: board.map(toInt),
       opponents,
+      ranges: ranges.slice(0, opponents).map((r) => r.keys),
       trials: DEFAULT_TRIALS,
     };
-  }, [hole, board, opponents, canCompute]);
+  }, [hole, board, opponents, ranges, canCompute]);
+
+  const setRangeAt = (i: number, choice: RangeChoice) =>
+    setRanges((prev) => prev.map((r, j) => (j === i ? choice : r)));
+  const setAllRanges = (choice: RangeChoice) => setRanges((prev) => prev.map(() => choice));
 
   useEffect(() => {
     if (!input) {
@@ -151,7 +167,7 @@ export function HoldemCalculator({ compute = computeInWorker }: Props) {
     return countOuts(hole.map(toInt), board.map(toInt));
   }, [hole, board]);
 
-  const advice = equity ? holdemAdvice({ equity: equity.equity, opponents, pot, toCall, outs: outs?.count }) : null;
+  const advice = equity ? holdemAdvice({ equity: equity.equity, opponents, pot, toCall, outs: outs?.count, vsRanges }) : null;
 
   const removeHole = (i: number) => setHole((h) => h.filter((_, j) => j !== i));
   const removeBoard = (i: number) => setBoard((b) => b.filter((_, j) => j !== i));
@@ -261,6 +277,77 @@ export function HoldemCalculator({ compute = computeInWorker }: Props) {
         </button>
       </div>
 
+      <section aria-label="Opponent ranges" className="flex flex-col gap-2 rounded-3xl bg-felt-950/30 p-4">
+        <div>
+          <h2 className="text-xl font-bold">Opponent ranges</h2>
+          <p className="text-sm text-chalk/70">
+            Each opponent plays random hands unless you give them a range (position opens, 3-bet, top X%, or your own grid).
+          </p>
+        </div>
+        <ul className="flex flex-col gap-2">
+          {activeRanges.map((r, i) => {
+            const live = r.keys ? liveCombos(r.keys, dead).length : 0;
+            return (
+              <li key={i} data-testid={`opponent-${i + 1}`} className="flex flex-wrap items-center gap-2 rounded-2xl bg-felt-950/40 p-2 pl-4">
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold">Opponent {i + 1}</div>
+                  <div className="text-sm text-chalk/70">
+                    {r.keys ? (
+                      <>
+                        {r.name} · {describeRange(r.keys)}
+                        {live === 0 ? (
+                          <span className="text-rose-300"> · no hands left with these cards</span>
+                        ) : (
+                          ''
+                        )}
+                      </>
+                    ) : (
+                      'Random hands'
+                    )}
+                  </div>
+                </div>
+                {r.keys && (
+                  <button
+                    type="button"
+                    aria-label={`Random hands for opponent ${i + 1}`}
+                    onClick={() => setRangeAt(i, { keys: null, name: null })}
+                    className="min-h-12 rounded-xl bg-felt-950/50 px-3 font-bold active:bg-felt-950"
+                  >
+                    Random
+                  </button>
+                )}
+                <button
+                  type="button"
+                  aria-label={`Edit opponent ${i + 1} range`}
+                  onClick={() => setEditing(i)}
+                  className="min-h-12 rounded-xl bg-gold px-4 font-bold text-felt-950"
+                >
+                  {r.keys ? 'Edit range' : 'Set range'}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      {editing !== null && (
+        <RangeEditor
+          who={`Opponent ${editing + 1}`}
+          initial={ranges[editing]}
+          dead={dead}
+          canApplyAll={opponents > 1}
+          onApply={(choice) => {
+            setRangeAt(editing, choice);
+            setEditing(null);
+          }}
+          onApplyAll={(choice) => {
+            setAllRanges(choice);
+            setEditing(null);
+          }}
+          onCancel={() => setEditing(null)}
+        />
+      )}
+
       <section aria-live="polite" aria-label="Advice" className="rounded-3xl bg-felt-950/40 p-5">
         {!holeFull ? (
           <p className="text-xl text-chalk/80">Pick your two hole cards to get started.</p>
@@ -274,7 +361,9 @@ export function HoldemCalculator({ compute = computeInWorker }: Props) {
           <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <div className="text-sm font-bold uppercase tracking-wide text-chalk/70">Equity</div>
+                <div data-testid="equity-basis" className="text-sm font-bold uppercase tracking-wide text-chalk/70">
+                  Equity {vsRanges ? 'vs ranges' : 'vs random hands'}
+                </div>
                 <div data-testid="equity" className="text-4xl font-extrabold text-gold">
                   {equity.exact ? '' : '~'}
                   {fmtPct(equity.equity)}

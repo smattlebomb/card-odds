@@ -6,8 +6,9 @@
  * - `toCall` is the bet you're facing. After you call the pot will be pot + toCall + toCall,
  *   so the equity you need to break even is toCall / (pot + 2·toCall).
  *   Example: pot 100, bet 50 → 50 / 200 = 25%.
- * - Equity is against random hands (no ranges), so real opponents who bet usually hold
- *   stronger hands than that; the advice says so.
+ * - Equity is either against random hands or against the opponent ranges you set. Against
+ *   random hands the advice warns that real bettors are usually stronger; against ranges it
+ *   says the result is only as good as the ranges entered.
  */
 
 export type HoldemAction = 'fold' | 'call' | 'raise' | 'check' | 'bet';
@@ -48,6 +49,8 @@ export interface HoldemAdviceInput {
   toCall: number;
   /** Outs on the flop/turn, if known (for an implied-odds note). */
   outs?: number | null;
+  /** True when equity was computed against opponent ranges (at least one opponent has one). */
+  vsRanges?: boolean;
 }
 
 export interface HoldemAdvice {
@@ -60,10 +63,19 @@ export interface HoldemAdvice {
 
 const pct = (x: number) => `${(x * 100).toFixed(x < 0.1 ? 1 : 0)}%`;
 
-export function holdemAdvice({ equity, opponents, pot, toCall, outs }: HoldemAdviceInput): HoldemAdvice {
+export const RANDOM_HANDS_NOTE = 'Equity here is against random hands; a player who bets usually has a stronger range.';
+export const RANGE_NOTE = "Equity here is against the opponent ranges you set, so it's only as good as those ranges.";
+
+export function holdemAdvice({ equity, opponents, pot, toCall, outs, vsRanges = false }: HoldemAdviceInput): HoldemAdvice {
   const fair = fairShare(opponents);
   const valueLine = fair + VALUE_MARGIN;
-  const vs = opponents === 1 ? '1 opponent' : `${opponents} opponents`;
+  const vs = vsRanges
+    ? opponents === 1
+      ? "your opponent's range"
+      : `your ${opponents} opponents' ranges`
+    : opponents === 1
+      ? '1 opponent'
+      : `${opponents} opponents`;
   const notes: string[] = [];
 
   if (!(toCall > 0)) {
@@ -86,7 +98,11 @@ export function holdemAdvice({ equity, opponents, pot, toCall, outs }: HoldemAdv
   const need = `need ${pct(required)} to call (${toCall} into a pot of ${pot + toCall})`;
   if (equity >= required) {
     if (equity >= valueLine && equity >= required + 0.1) {
-      notes.push('Real opponents who bet are usually stronger than a random hand, so be a little more careful than these numbers suggest.');
+      notes.push(
+        vsRanges
+          ? RANGE_NOTE
+          : 'Real opponents who bet are usually stronger than a random hand, so be a little more careful than these numbers suggest.',
+      );
       return {
         action: 'raise',
         required,
@@ -95,7 +111,7 @@ export function holdemAdvice({ equity, opponents, pot, toCall, outs }: HoldemAdv
       };
     }
     if (equity - required < CLOSE_MARGIN) notes.push('Close to break-even: small mistakes in the read swing this either way.');
-    notes.push('Equity here is against random hands; a player who bets usually has a stronger range.');
+    notes.push(vsRanges ? RANGE_NOTE : RANDOM_HANDS_NOTE);
     return {
       action: 'call',
       required,

@@ -37,15 +37,29 @@ See `.grokbot/PLAN.md` for the phase plan.
 
 ## Hold'em: how the numbers work
 
-**Equity** is P(win) plus a fair share of ties, against random remaining cards (you can also fix a known opponent hand in the engine; the calculator itself treats opponents as random). When the number of deals is small enough — typically heads-up on the turn or river — the result is an exact enumeration. Otherwise it runs 200,000 Monte Carlo deals in a Web Worker so the UI stays smooth, and labels the result as an estimate.
+**Equity** is P(win) plus a fair share of ties. Each opponent plays either random cards (the default) or a **range** you give them. When the number of deals is small enough the result is an exact enumeration: typically heads-up on the turn or river, including against a range. Otherwise it runs 200,000 Monte Carlo deals in a Web Worker so the UI stays smooth, and labels the result as an estimate. If you change the inputs while a run is still going, that run is stopped and a new one starts, so the result always matches what's on screen.
+
+**Opponent ranges.** Tap **Set range** next to an opponent to open the range picker, a 13×13 grid. Tap a hand to toggle it, or drag across cells to paint several. The first cell you touch decides whether the drag adds or removes. Presets:
+- **By position:** opening ranges for UTG / MP / CO / BTN / SB, and a defend range for the BB, each in a tight and a loose version. These are typical 6-max cash-game styles, not solver output.
+- **Top X%:** a slider plus 5 / 10 / 15 / 20 / 30 / 50% buttons. Hands are ordered by Bill Chen's formula, a classic rule-of-thumb hand ranking rather than an equity ranking.
+- **3-bet:** a value range (QQ+, AK) and a wider one (TT+, AJs+, KQs, AQo+, A5s, A4s).
+
+Each opponent keeps their own range, and **Use for all opponents** copies one range to everyone. **Random hands** puts an opponent back on random cards.
+
+**Card removal** is exact. A range's combos that use your hole cards, the board or another opponent's cards in the same deal are impossible. The Monte Carlo draws each ranged opponent's combo uniformly and redraws whenever two opponents collide, so every possible deal is equally likely. A range with no hands left (say AA when you hold two Aces and a third is on the board) shows an error instead of a fake 100%. Against ranges, the advice compares range equity to pot odds and drops the "random hands" warning. In its place it reminds you the answer is only as good as the range you entered.
 
 **Outs** on the flop or turn are cards that raise the hand's category to at least two pair and clearly ahead of the board (so a flush draw is 9, an open-ended straight draw is 8). Overcards to a mere pair are ignored on purpose; dirty outs that mostly make the board are filtered out.
 
-**Pot odds:** enter the pot *before* the bet you're facing, and the amount to call. A $50 bet into a $100 pot needs 25% equity (50 into 200). Advice is educational and assumes random hands; a real player who bets usually has a stronger range than that, and the screen says so.
+**Pot odds:** enter the pot *before* the bet you're facing, and the amount to call. A $50 bet into a $100 pot needs 25% equity (50 into 200). Advice is educational. With random opponents it reminds you that a real player who bets usually has a stronger range than that; set an opponent range to get advice based on range equity.
 
 **Preflop chart:** a tight-ish 6-max cash opening (RFI) guide for UTG / MP / CO / BTN / SB. It is not a solver and the big blind has no opening range here (it already posted).
 
-The evaluator and known matchups are unit-tested, including AA vs KK heads-up ≈ 82.6% equity, AKs vs AKo, 22 vs AK, wheel straights, and river chops.
+The evaluator and known matchups are unit-tested, including AA vs KK heads-up ≈ 82.6% equity, AKs vs AKo, 22 vs AK, wheel straights, and river chops. Range tests cover:
+- AA vs the KK range ≈ 81.9 / 18.1
+- AKs vs QQ ≈ 46 / 54
+- AA vs a random hand ≈ 85.2%, and a range of every hand gives the same answer as random
+- exact range equities on the river
+- card removal between your cards, the board and other opponents
 
 ## Run it
 
